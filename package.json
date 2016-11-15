@@ -1,0 +1,21 @@
+{
+  "name": "geo-primitives",
+  "version": "1.0.0",
+  "description": "Geo primitives operations",
+  "main": "index.js",
+  "dependencies": {
+    "browserify": "^13.1.1",
+    "openlayers": "^3.19.1",
+    "uglify-js": "^2.7.4",
+    "watchify": "^3.7.0"
+  },
+  "devDependencies": {
+    "openlayers": "^3.19.1"
+  },
+  "scripts": {
+    "start": "watchify index.js arcs.js vector_features.js geo-utils.js --outfile bundle.js",
+    "build": "browserify index.js | uglifyjs --compress --output bundle.js"
+  },
+  "author": "poslegm@gmail.com",
+  "license": "ISC"
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <title>Draw Primitives</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v3.19.1/css/ol.css" type="text/css">
+    <style>
+      #map {
+        width: 1200px;
+        height: 700px;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <form class="form-inline">
+      <label>Primitive type &nbsp;</label>
+      <select id="type">
+        <option value="Polygon">Polygon</option>
+        <option value="Line">Line</option>
+      </select>
+    </form>
+
+    <div id="map"></div>
+
+    <script src="bundle.js"></script>
+  </body>
+
+</html>
