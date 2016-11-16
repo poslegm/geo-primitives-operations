@@ -3,6 +3,25 @@ const Arc = require('./arcs');
 const Polygon = require('./polygon');
 const utils = require('./geo-utils');
 
+const [vectorSource, map] = initMap();
+const arcs = [];
+const polygons = [];
+const pointsLongLat = [];
+
+const drawPoint = new ol.interaction.Draw({
+  source: vectorSource,
+  type: 'Point'
+});
+drawPoint.on('drawstart', addDot);
+
+const typeSelect = document.getElementById('type');
+typeSelect.onchange = selectAction();
+
+document.addEventListener('keydown', handleKeys, false);
+map.addInteraction(drawPoint);
+
+// ----------------------------------
+
 function initMap() {
   const mapParameters = {
     wrapX: false,
@@ -31,24 +50,13 @@ function initMap() {
   return [vectorSource, map];
 }
 
-const [vectorSource, map] = initMap();
-const arcs = [];
-const polygons = [];
-const pointsLongLat = [];
-
-draw = new ol.interaction.Draw({
-  source: vectorSource,
-  type: 'Point'
-});
-
-const typeSelect = document.getElementById('type');
-typeSelect.onchange = function() {
-  clearAll();
-};
-
-draw.on('drawstart', addDot);
-document.addEventListener('keydown', handleKeys, false);
-map.addInteraction(draw);
+function selectAction() {
+  if (typeSelect.value === 'Polygon' || typeSelect.value === 'Line') {
+    map.addInteraction(drawPoint);
+  } else if (typeSelect.value === 'Square') {
+    map.removeInteraction(drawPoint);
+  }
+}
 
 function addDot(e) {
   coords = e.feature.getGeometry().getCoordinates();
@@ -116,10 +124,10 @@ function closePolygon() {
   polygons.slice(-1)[0].draw(vectorSource);
 }
 
-function clearAll() {
-  vectorSource.clear();
-  pointsLongLat.clear();
-  polygons.clear();
-  arcs.clear();
-}
+//function clearAll() {
+//  vectorSource.clear();
+//  pointsLongLat.clear();
+//  polygons.clear();
+//  arcs.clear();
+//}
 

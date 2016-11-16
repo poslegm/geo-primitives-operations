@@ -58,6 +58,10 @@ class Polygon {
     }
   }
 
+  checkDotInside(coords) {
+
+  }
+
   _createTempLine() {
     this._tempLineAdded = false;
     this._tempLine = new ol.Feature({name: 'TempLine'});
