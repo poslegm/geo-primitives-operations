@@ -56,7 +56,7 @@ class Arc {
     const MaxLat = 85.05113;
 
     const circleDistance = this._computeCircleDistance(longLatA, longLatB);
-    const dotCount = 200;
+    const dotCount = 400;
     const delta = 1 / (dotCount - 1);
 
     const part1 = [];

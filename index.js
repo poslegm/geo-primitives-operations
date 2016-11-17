@@ -6,7 +6,8 @@ const utils = require('./geo-utils');
 const [vectorSource, map] = initMap();
 const arcs = [];
 const polygons = [];
-const pointsLongLat = [];
+const points = [];
+const tempPointsLongLat = [];
 
 const drawPoint = new ol.interaction.Draw({
   source: vectorSource,
@@ -51,7 +52,7 @@ function initMap() {
 }
 
 function selectAction() {
-  if (typeSelect.value === 'Polygon' || typeSelect.value === 'Line') {
+  if (typeSelect.value === 'Polygon' || typeSelect.value === 'Line' || typeSelect.value === 'Point') {
     map.addInteraction(drawPoint);
   } else if (typeSelect.value === 'Square') {
     map.removeInteraction(drawPoint);
@@ -66,6 +67,8 @@ function addDot(e) {
     addDotToPolygon(longLat);
   } else if (typeSelect.value === 'Line') {
     addDotToLines(longLat);
+  } else if (typeSelect.value === 'Point') {
+    addDotToPoints(longLat, e.feature);
   }
 }
 
@@ -83,14 +86,18 @@ function addDotToPolygon(point) {
 }
 
 function addDotToLines(point) {
-  if (pointsLongLat.length === 1) {
-    const newArc = new Arc(pointsLongLat[0], point);
+  if (tempPointsLongLat.length === 1) {
+    const newArc = new Arc(tempPointsLongLat[0], point);
     newArc.draw(vectorSource);
     arcs.push(newArc);
-    pointsLongLat.clear();
+    tempPointsLongLat.clear();
   } else {
-    pointsLongLat.push(point);
+    tempPointsLongLat.push(point);
   }
+}
+
+function addDotToPoints(point, feature) {
+  points.push([point, feature]);
 }
 
 function handleKeys(event) {
@@ -100,6 +107,8 @@ function handleKeys(event) {
       computeAllArcsIntersections();
     } else if (typeSelect.value === 'Polygon') {
       closePolygon();
+    } else if (typeSelect.value === 'Point') {
+      checkAllPointsInside();
     }
   }
 }
@@ -124,9 +133,22 @@ function closePolygon() {
   polygons.slice(-1)[0].draw(vectorSource);
 }
 
+function checkAllPointsInside() {
+  polygons.filter((p) => p.isClosed()).forEach((polygon) => points.forEach((point) => {
+    const [coords, feature] = point;
+    if (polygon.checkDotInside(coords)) {
+      console.log("inside");
+      const coloredPoint = new ol.style.Circle({
+        radius: 5,
+        stroke: new ol.style.Stroke({color: 'red', width: 2})
+      });
+      feature.setStyle(new ol.style.Style({image: coloredPoint}));
+    }
+  }));
+}
 //function clearAll() {
 //  vectorSource.clear();
-//  pointsLongLat.clear();
+//  tempPointsLongLat.clear();
 //  polygons.clear();
 //  arcs.clear();
 //}

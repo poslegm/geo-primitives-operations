@@ -57,9 +57,23 @@ class Polygon {
       this._tempLine.setGeometry(new ol.geom.LineString([p1, p2]));
     }
   }
-
+  /*
+   * Принимает долготу и широту точки, проверяет её принадлежность фигуре методом трассировки луча
+   * Луч идёт от точки по меридиану до верхней границы карты
+   * !!! может не работать с фигурами, выходящими за верхнюю границу (прецедентов не было, но подозрение есть) !!!
+    * */
   checkDotInside(coords) {
+    const MaxLat = 90;//85.05113;
+    // точка, лежащая на верхней границе карты и на том же меридиане, что и данная
+    const topPoint = [coords[0], MaxLat];
+    const topRay = new Arc(coords, topPoint);
+    const intersectionsCountTop = this._arcs.map((a) => a.findIntersection(topRay)).filter((x) => x != null).length;
 
+    const bottomPoint = [coords[0], -MaxLat];
+    const bottomRay = new Arc(coords, bottomPoint);
+    const intersectionsCountBottom = this._arcs.map((a) => a.findIntersection(bottomRay)).filter((x) => x != null).length;
+
+    return (intersectionsCountTop % 2 === 1) || (intersectionsCountBottom % 2 === 1);
   }
 
   _createTempLine() {
