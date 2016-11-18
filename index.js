@@ -17,6 +17,8 @@ drawPoint.on('drawstart', addDot);
 
 const typeSelect = document.getElementById('type');
 typeSelect.onchange = selectAction();
+const clearButton = document.getElementById('clear');
+clearButton.onclick = clearAll;
 
 document.addEventListener('keydown', handleKeys, false);
 map.addInteraction(drawPoint);
@@ -146,10 +148,13 @@ function checkAllPointsInside() {
     }
   }));
 }
-//function clearAll() {
-//  vectorSource.clear();
-//  tempPointsLongLat.clear();
-//  polygons.clear();
-//  arcs.clear();
-//}
+
+function clearAll() {
+  console.log('clear');
+  vectorSource.clear();
+  tempPointsLongLat.clear();
+  polygons.clear();
+  arcs.clear();
+  points.clear();
+}
 

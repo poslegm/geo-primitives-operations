@@ -63,8 +63,8 @@ class Polygon {
    * !!! может не работать с фигурами, выходящими за верхнюю границу (прецедентов не было, но подозрение есть) !!!
     * */
   checkDotInside(coords) {
-    const MaxLat = 90;//85.05113;
-    // точка, лежащая на верхней границе карты и на том же меридиане, что и данная
+    const MaxLat = 90;
+    // точка, лежащая на северном полюсе и на том же меридиане, что и данная
     const topPoint = [coords[0], MaxLat];
     const topRay = new Arc(coords, topPoint);
     const intersectionsCountTop = this._arcs.map((a) => a.findIntersection(topRay)).filter((x) => x != null).length;

@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="https://openlayers.org/en/v3.19.1/css/ol.css" type="text/css">
     <style>
       #map {
-        width: 1200px;
+        width: 78%;
         height: 700px;
+        float: left;
+        display: inline-block;
+      }
+
+      #controls {
+        float: right;
+        display: inline;
+      }
+
+      #clear_button {
+        margin-left: 10px;
       }
     </style>
   </head>
 
   <body>
+    <div id="map"></div>
 
-    <form class="form-inline">
-      <label>Primitive type &nbsp;</label>
+    <div class="controls">
+      <button class="clear_button" id="clear">Clear</button>
       <select id="type">
         <option value="Polygon">Polygon</option>
         <option value="Point">Point</option>
         <option value="Line">Line</option>
       </select>
-    </form>
-
-    <div id="map"></div>
+    </div>
 
     <script src="bundle.js"></script>
   </body>
