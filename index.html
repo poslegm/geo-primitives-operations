@@ -11,6 +11,7 @@
         height: 700px;
         float: left;
         display: inline-block;
+        margin-right: 10px;
       }
 
       #controls {
@@ -18,8 +19,8 @@
         display: inline;
       }
 
-      #clear_button {
-        margin-left: 10px;
+      #coordinates_list {
+        list-style-type: none;
       }
     </style>
   </head>
@@ -28,12 +29,21 @@
     <div id="map"></div>
 
     <div class="controls">
-      <button class="clear_button" id="clear">Clear</button>
+      <button id="clear">Clear</button>
       <select id="type">
         <option value="Polygon">Polygon</option>
         <option value="Point">Point</option>
         <option value="Line">Line</option>
+        <option value="Coordinates">Coordinates</option>
       </select>
+      <div>
+        <button id="intersection_button">Intersection</button>
+        <button id="union_button">Union</button>
+        <button id="a_minus_b_button">A - B</button>
+        <button id="b_minus_a_button">B - A</button>
+      </div>
+
+      <ul id="coordinates_list"></ul>
     </div>
 
     <script src="bundle.js"></script>

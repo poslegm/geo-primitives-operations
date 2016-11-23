@@ -10,6 +10,8 @@ class Arc {
     this.cartesianA = vf.convertLongLatToCartesian(a.map((x) => x * Math.PI / 180));
     this.cartesianB = vf.convertLongLatToCartesian(b.map((x) => x * Math.PI / 180));
     [this.coordinatesPart1, this.coordinatesPart2] = this._computeCoordinates(a, b);
+    this.a = a;
+    this.b = b;
   }
 
   draw(vectorSource) {
@@ -47,6 +49,9 @@ class Arc {
     }
   }
 
+  toString() {
+    return this.a + "/" + this.b;
+  }
   /*
    * Принимает координаты концов отрезка в EPSG:4326, возвращает координаты точек геодезического отрезка в EPSG:3857
    * Возвращаемые координаты делятся на два списка, один из которых может быть пустым

@@ -76,6 +76,47 @@ class Polygon {
     return (intersectionsCountTop % 2 === 1) || (intersectionsCountBottom % 2 === 1);
   }
 
+  intersection(other) {
+    if (!this._closed || !other._closed) {
+      return null;
+    }
+
+  }
+
+
+
+  _createPointsLists() {
+    const intersections = {};
+
+    this._arcs.forEach((a) => {
+      other._arcs.forEach((b) => {
+        const intersection = a.findIntersection(b);
+        if (intersection != null) {
+          utils.addToListsDict(intersections, a.toString(), [intersection, "inersection"]);
+          utils.addToListsDict(intersections, b.toString(), [intersection, "inersection"]);
+        }
+      })
+    });
+
+
+    var thisDots = [];
+    var otherDots = [];
+
+    this._arcs.forEach((a) => {
+      thisDots.push([a.a, "own"]);
+      if (intersections[a.toString()] != undefined) {
+        thisDots = thisDots.concat(intersections[a.toString()]);
+      }
+    });
+
+    other._arcs.forEach((a) => {
+      otherDots.push([a.a, "own"]);
+      if (intersections[a.toString()] != undefined) {
+        otherDots = otherDots.concat(intersections[a.toString()]);
+      }
+    });
+  }
+
   _createTempLine() {
     this._tempLineAdded = false;
     this._tempLine = new ol.Feature({name: 'TempLine'});

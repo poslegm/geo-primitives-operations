@@ -2,6 +2,7 @@ const ol = require('openlayers');
 const Arc = require('./arcs');
 const Polygon = require('./polygon');
 const utils = require('./geo-utils');
+const $ = require('jquery');
 
 const [vectorSource, map] = initMap();
 const arcs = [];
@@ -15,10 +16,9 @@ const drawPoint = new ol.interaction.Draw({
 });
 drawPoint.on('drawstart', addDot);
 
-const typeSelect = document.getElementById('type');
-typeSelect.onchange = selectAction();
-const clearButton = document.getElementById('clear');
-clearButton.onclick = clearAll;
+$("#type").change(selectAction);
+$("#clear").click(clearAll);
+$("#intersection_button").click(polygonsIntersection);
 
 document.addEventListener('keydown', handleKeys, false);
 map.addInteraction(drawPoint);
@@ -54,22 +54,31 @@ function initMap() {
 }
 
 function selectAction() {
-  if (typeSelect.value === 'Polygon' || typeSelect.value === 'Line' || typeSelect.value === 'Point') {
-    map.addInteraction(drawPoint);
-  } else if (typeSelect.value === 'Square') {
-    map.removeInteraction(drawPoint);
+  if ($('#type').val() === 'Polygon' || $('#type').val() === 'Line' || $('#type').val() === 'Point') {
+    clickInput();
+  } else if ($('#type').val() === 'Coordinates') {
+    coordinatesInput();
   }
+}
+
+function clickInput() {
+  map.addInteraction(drawPoint);
+}
+
+function coordinatesInput() {
+  map.removeInteraction(drawPoint);
+  addCoordinatesInputField();
 }
 
 function addDot(e) {
   coords = e.feature.getGeometry().getCoordinates();
   longLat = ol.proj.transform(coords, 'EPSG:3857', 'EPSG:4326');
 
-  if (typeSelect.value === 'Polygon') {
+  if ($('#type').val() === 'Polygon') {
     addDotToPolygon(longLat);
-  } else if (typeSelect.value === 'Line') {
+  } else if ($('#type').val() === 'Line') {
     addDotToLines(longLat);
-  } else if (typeSelect.value === 'Point') {
+  } else if ($('#type').val() === 'Point') {
     addDotToPoints(longLat, e.feature);
   }
 }
@@ -105,11 +114,11 @@ function addDotToPoints(point, feature) {
 function handleKeys(event) {
   // ENTER key
   if (event.keyCode === 13) {
-    if (typeSelect.value === 'Line') {
+    if ($('#type').val() === 'Line') {
       computeAllArcsIntersections();
-    } else if (typeSelect.value === 'Polygon') {
+    } else if ($('#type').val() === 'Polygon') {
       closePolygon();
-    } else if (typeSelect.value === 'Point') {
+    } else if ($('#type').val() === 'Point') {
       checkAllPointsInside();
     }
   }
@@ -139,7 +148,6 @@ function checkAllPointsInside() {
   polygons.filter((p) => p.isClosed()).forEach((polygon) => points.forEach((point) => {
     const [coords, feature] = point;
     if (polygon.checkDotInside(coords)) {
-      console.log("inside");
       const coloredPoint = new ol.style.Circle({
         radius: 5,
         stroke: new ol.style.Stroke({color: 'red', width: 2})
@@ -147,6 +155,33 @@ function checkAllPointsInside() {
       feature.setStyle(new ol.style.Style({image: coloredPoint}));
     }
   }));
+}
+
+function polygonsIntersection() {
+  console.log("intersection");
+  if ($('#type').val() != 'Polygon') {
+    return;
+  }
+
+  console.log("intersection");
+
+  utils.range(polygons.length).forEach((i) => {
+    for (var j = i + 1; j < polygons.length; j++) {
+      polygons[i].intersection(polygons[j]);
+    }
+  });
+}
+
+function polygonsUnion() {
+  if ($('#type').val() != 'Polygon') {
+    return;
+  }
+
+  utils.range(polygons.length).forEach((i) => {
+    for (var j = i + 1; j < polygons.length; j++) {
+      polygons[i].union(polygons[j]);
+    }
+  });
 }
 
 function clearAll() {
@@ -158,3 +193,8 @@ function clearAll() {
   points.clear();
 }
 
+function addCoordinatesInputField() {
+  const div = $("div").add("input")//.add("input").add("button");
+  const elem = $("li").add(div);
+  $("#coordinates_list").append(elem);
+}
