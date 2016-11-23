@@ -83,7 +83,13 @@ class Polygon {
 
   }
 
+  _bypassPoints(p1, p2, startPoints) {
+    while (startPoints.length != 0) {
+      for (var i = startPoints[0]; i < p1.length || p1[i][1] != "exit"; i++) {
 
+      }
+    }
+  }
 
   _createPointsLists() {
     const intersections = {};
