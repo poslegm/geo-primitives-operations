@@ -27,3 +27,7 @@ module.exports.addToListsDict = function (dict, key, value) {
     dict[key].push(value);
   }
 }
+
+module.exports.is2dCoordsEqual = function (coords1, coords2) {
+  return coords1[0] === coords2[0] && coords1[1] === coords2[1];
+}

@@ -167,7 +167,7 @@ function polygonsIntersection() {
 
   utils.range(polygons.length).forEach((i) => {
     for (var j = i + 1; j < polygons.length; j++) {
-      polygons[i].intersection(polygons[j]);
+      console.log(polygons[i].intersection(polygons[j]));
     }
   });
 }
