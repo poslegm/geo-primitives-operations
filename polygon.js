@@ -88,11 +88,18 @@ class Polygon {
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
-
     const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other);
-    console.log(thisLabeledDots);
-    console.log(otherLabeledDots);
-    console.log(startDots);
+
+    if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
+      if (other.checkDotInside(thisDots[0][0])) {
+        return [thisDots.map((p) => p[0])];
+      } else if (this.checkDotInside(otherDots[0][0])) {
+        return [otherDots.map((p) => p[0])];
+      } else {
+        return [];
+      }
+    }
+
     return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
   }
 
