@@ -89,6 +89,14 @@ class Polygon {
 
     const [thisDots, otherDots] = this._createPointsLists(other);
 
+    const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other);
+    console.log(thisLabeledDots);
+    console.log(otherLabeledDots);
+    console.log(startDots);
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
+  }
+
+  _markPoints(thisDots, otherDots, other, startFromEnter=true) {
     var firstPointChecked = false;
     var nextPointLabel = ENTER_POINT;
     const thisLabeledDots = [];
@@ -124,7 +132,7 @@ class Polygon {
         otherLabeledDots.push(pointWAA);
         thisLabeledDots[j].p2index = i;
 
-        if (pointWAA.label === ENTER_POINT) {
+        if ((startFromEnter && pointWAA.label === ENTER_POINT) || (!startFromEnter && pointWAA.label === EXIT_POINT)) {
           startDots.push(pointWAA);
         }
       } else {
@@ -132,9 +140,7 @@ class Polygon {
       }
     }
 
-    console.log(thisLabeledDots);
-    console.log(otherLabeledDots);
-    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
+    return [thisLabeledDots, otherLabeledDots, startDots];
   }
 
   /*
@@ -142,7 +148,7 @@ class Polygon {
    * Возвращает список списков координат вершин для отсечённых многоугольников
    * !!! Работает только, если оба многоугольника заданы по часовой стрелке !!!
     * */
-  _bypassPoints(p1, p2, startPoints) {
+  _bypassPoints(p1, p2, startPoints, reverseBypass=false) {
     const resultPolygons = [];
 
     while (startPoints.length != 0) {
@@ -155,13 +161,13 @@ class Polygon {
 
       while (j != firstPointP2Index) {
         if (j === -1) { j = firstPointP2Index; }
-        for (i = p2[j].p1index; i < p1.length && p1[i].label != EXIT_POINT; i++) {
+        for (i = p2[j].p1index; p1[i].label != EXIT_POINT; i++) {
           clippedPolygonPoints.push(p1[i].coords);
         }
         console.log(clippedPolygonPoints);
         console.log(p1[i].p2index);
 
-        for (j = p1[i].p2index; j < p2.length && p2[j].label != ENTER_POINT; j++) {
+        for (j = p1[i].p2index; p2[j].label != ENTER_POINT; reverseBypass ? j-- : j++) {
           clippedPolygonPoints.push(p2[j].coords);
           console.log(p2[j].label);
         }
