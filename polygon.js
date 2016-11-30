@@ -4,10 +4,15 @@ const ol = require('openlayers');
 const Arc = require('./arcs');
 
 class Polygon {
-  constructor() {
+  constructor(points=[]) {
     this._points = [];
     this._arcs = [];
     this._closed = false;
+
+    points.forEach((p) => this.addPoint(p));
+    if (points.length > 0) {
+      this.close();
+    }
 
     this._createTempLine();
   }
@@ -28,7 +33,7 @@ class Polygon {
       return;
     }
 
-    this._arcs.push(new Arc(this._points[0], this._points.slice(-1)[0]));
+    this._arcs.push(new Arc(this._points.slice(-1)[0], this._points[0]));
     this._closed = true;
   }
 
@@ -36,12 +41,12 @@ class Polygon {
     return this._closed;
   }
 
-  draw(vectorSource) {
+  draw(vectorSource, color="blue") {
     if (this._arcs.length === 0) {
       return;
     }
     console.log('draw');
-    this._arcs.forEach((a) => a.draw(vectorSource));
+    this._arcs.forEach((a) => a.draw(vectorSource, color));
 
     if (!this._tempLineAdded) {
       vectorSource.addFeature(this._tempLine);
@@ -136,6 +141,7 @@ class Polygon {
   /*
    * Принимает списки точек для каждого многоугольника (с точками пересечения) в виде PointWAA и отдельный список начальных точек
    * Возвращает список списков координат вершин для отсечённых многоугольников
+   * !!! Работает только, если оба многоугольника заданы по часовой стрелке !!!
     * */
   _bypassPoints(p1, p2, startPoints) {
     const resultPolygons = [];
@@ -153,7 +159,6 @@ class Polygon {
         for (i = p2[j].p1index; i < p1.length && p1[i].label != "exit"; i++) {
           clippedPolygonPoints.push(p1[i].coords);
         }
-        startPoints.removeFirst();
         console.log(clippedPolygonPoints);
         console.log(p1[i].p2index);
 

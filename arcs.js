@@ -14,9 +14,25 @@ class Arc {
     this.b = b;
   }
 
-  draw(vectorSource) {
-    vectorSource.addFeature(new ol.Feature(new ol.geom.LineString(this.coordinatesPart1)));
-    vectorSource.addFeature(new ol.Feature(new ol.geom.LineString(this.coordinatesPart2)));
+  draw(vectorSource, lineColor="blue") {
+    const f1 = new ol.Feature(new ol.geom.LineString(this.coordinatesPart1));
+    const f2 = new ol.Feature(new ol.geom.LineString(this.coordinatesPart2));
+
+    f1.setStyle(new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: lineColor,
+        width: lineColor === "blue" ? 1 : 2
+      })
+    }));
+    f2.setStyle(new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: lineColor,
+        width: lineColor === "blue" ? 1 : 2
+      })
+    }));
+
+    vectorSource.addFeature(f1);
+    vectorSource.addFeature(f2);
   }
 
   findIntersection(other) {
@@ -71,8 +87,6 @@ class Arc {
 
     utils.range(dotCount).forEach((i) => {
       const p = this._intermediatePoint(i * delta, circleDistance, longLatA, longLatB);
-
-      console.log(p[0]);
 
       // граничный случай 1: линия продолжается по параллели, выходящей с одной стороны карты, и продолжающейся с другой
       // устранение горизонтальной линии, отрисовывающейся через всю карту одним вызовом LineString
