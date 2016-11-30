@@ -82,7 +82,6 @@ class Polygon {
   }
 
   // TODO проверять частный случай, когда пересечений нет
-  // TODO вынести строки в константы
   intersection(other) {
     if (!this._closed || !other._closed) {
       return null;
@@ -91,21 +90,21 @@ class Polygon {
     const [thisDots, otherDots] = this._createPointsLists(other);
 
     var firstPointChecked = false;
-    var nextPointLabel = "enter";
+    var nextPointLabel = ENTER_POINT;
     const thisLabeledDots = [];
     const otherLabeledDots = [];
     const startDots = [];
 
     for (var i = 0; i < thisDots.length; i++) {
       const [coords, label] = thisDots[i];
-      if (label === "intersection" && !firstPointChecked) {
-        nextPointLabel = other.checkDotInside(thisDots[i - 1][0]) ? "exit" : "enter";
+      if (label === INTERSECTION_POINT && !firstPointChecked) {
+        nextPointLabel = other.checkDotInside(thisDots[i - 1][0]) ? EXIT_POINT : ENTER_POINT;
         firstPointChecked = true;
       }
 
-      if (label === "intersection") {
+      if (label === INTERSECTION_POINT) {
         thisLabeledDots.push(new PointWAA(coords, nextPointLabel, i, -1));
-        nextPointLabel = nextPointLabel === "enter" ? "exit" : "enter";
+        nextPointLabel = nextPointLabel === ENTER_POINT ? EXIT_POINT : ENTER_POINT;
       } else {
         thisLabeledDots.push(new PointWAA(coords, label, i, -1));
       }
@@ -116,7 +115,7 @@ class Polygon {
       const [coords, label] = otherDots[i];
 
       const p1index = -1;
-      if (label === "intersection") {
+      if (label === INTERSECTION_POINT) {
         var j = 0;
         while (j < thisLabeledDots.length && !utils.is2dCoordsEqual(coords, thisLabeledDots[j].coords)) {
           j++;
@@ -125,7 +124,7 @@ class Polygon {
         otherLabeledDots.push(pointWAA);
         thisLabeledDots[j].p2index = i;
 
-        if (pointWAA.label === "enter") {
+        if (pointWAA.label === ENTER_POINT) {
           startDots.push(pointWAA);
         }
       } else {
@@ -156,13 +155,13 @@ class Polygon {
 
       while (j != firstPointP2Index) {
         if (j === -1) { j = firstPointP2Index; }
-        for (i = p2[j].p1index; i < p1.length && p1[i].label != "exit"; i++) {
+        for (i = p2[j].p1index; i < p1.length && p1[i].label != EXIT_POINT; i++) {
           clippedPolygonPoints.push(p1[i].coords);
         }
         console.log(clippedPolygonPoints);
         console.log(p1[i].p2index);
 
-        for (j = p1[i].p2index; j < p2.length && p2[j].label != "enter"; j++) {
+        for (j = p1[i].p2index; j < p2.length && p2[j].label != ENTER_POINT; j++) {
           clippedPolygonPoints.push(p2[j].coords);
           console.log(p2[j].label);
         }
@@ -183,8 +182,8 @@ class Polygon {
       other._arcs.forEach((b) => {
         const intersection = a.findIntersection(b);
         if (intersection != null) {
-          utils.addToListsDict(intersections, a.toString(), [intersection, "intersection"]);
-          utils.addToListsDict(intersections, b.toString(), [intersection, "intersection"]);
+          utils.addToListsDict(intersections, a.toString(), [intersection, INTERSECTION_POINT]);
+          utils.addToListsDict(intersections, b.toString(), [intersection, INTERSECTION_POINT]);
         }
       })
     });
@@ -194,14 +193,14 @@ class Polygon {
     var otherDots = [];
 
     this._arcs.forEach((a) => {
-      thisDots.push([a.a, "own"]);
+      thisDots.push([a.a, OWN_POINT]);
       if (intersections[a.toString()] != undefined) {
         thisDots = thisDots.concat(this._sortIntersectionPoints(a.a, a.b, intersections[a.toString()]));
       }
     });
 
     other._arcs.forEach((a) => {
-      otherDots.push([a.a, "own"]);
+      otherDots.push([a.a, OWN_POINT]);
       if (intersections[a.toString()] != undefined) {
         otherDots = otherDots.concat(this._sortIntersectionPoints(a.a, a.b, intersections[a.toString()]));
       }
@@ -251,5 +250,10 @@ class PointWAA {
     this.p2index = p2index;
   }
 }
+
+EXIT_POINT = "exit";
+ENTER_POINT = "enter";
+INTERSECTION_POINT = "intersection";
+OWN_POINT = "own";
 
 module.exports = Polygon;
