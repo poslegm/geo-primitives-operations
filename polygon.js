@@ -45,7 +45,7 @@ class Polygon {
     if (this._arcs.length === 0) {
       return;
     }
-    console.log('draw');
+
     this._arcs.forEach((a) => a.draw(vectorSource, color));
 
     if (!this._tempLineAdded) {
@@ -81,10 +81,9 @@ class Polygon {
     return (intersectionsCountTop % 2 === 1) || (intersectionsCountBottom % 2 === 1);
   }
 
-  // TODO проверять частный случай, когда пересечений нет
   intersection(other) {
     if (!this._closed || !other._closed) {
-      return null;
+      return [];
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
@@ -102,6 +101,33 @@ class Polygon {
 
     return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
   }
+
+  union(other) {
+    if (!this._closed || !other._closed) {
+      return [];
+    }
+
+    const [thisDots, otherDots] = this._createPointsLists(other);
+    const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
+
+    if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
+      return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])];
+    }
+
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false);
+  }
+
+  diff(other) {
+    if (!this._closed || !other._closed) {
+      return [];
+    }
+
+    const [thisDots, otherDots] = this._createPointsLists(other);
+    const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
+
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false, true);
+  }
+
 
   _markPoints(thisDots, otherDots, other, startFromEnter=true) {
     var firstPointChecked = false;
@@ -155,7 +181,9 @@ class Polygon {
    * Возвращает список списков координат вершин для отсечённых многоугольников
    * !!! Работает только, если оба многоугольника заданы по часовой стрелке !!!
     * */
-  _bypassPoints(p1, p2, startPoints, reverseBypass=false) {
+  _bypassPoints(p1, p2, startPoints, startFromEnter=true, reverseBypass=false) {
+    const enter_point = startFromEnter ? ENTER_POINT : EXIT_POINT;
+    const exit_point = startFromEnter ? EXIT_POINT : ENTER_POINT;
     const resultPolygons = [];
 
     while (startPoints.length != 0) {
@@ -168,15 +196,18 @@ class Polygon {
 
       while (j != firstPointP2Index) {
         if (j === -1) { j = firstPointP2Index; }
-        for (i = p2[j].p1index; p1[i].label != EXIT_POINT; i++) {
+        for (i = p2[j].p1index; p1[i].label != exit_point; i++) {
           clippedPolygonPoints.push(p1[i].coords);
+          if (i === p1.length - 1) {
+            i = -1;
+          }
         }
-        console.log(clippedPolygonPoints);
-        console.log(p1[i].p2index);
 
-        for (j = p1[i].p2index; p2[j].label != ENTER_POINT; reverseBypass ? j-- : j++) {
+        for (j = p1[i].p2index; p2[j].label != enter_point; reverseBypass ? j-- : j++) {
           clippedPolygonPoints.push(p2[j].coords);
-          console.log(p2[j].label);
+          if (j === p2.length - 1) {
+            j = -1;
+          }
         }
         startPoints.removeFromArray(p2[j], (x, y) => x.p2index === y.p2index);
       }
