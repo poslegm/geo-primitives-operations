@@ -5,10 +5,14 @@ const utils = require('./geo-utils');
 const $ = require('jquery');
 
 const [vectorSource, map] = initMap();
+// списки объектов для отрисовки
 const arcs = [];
 const polygons = [];
 const points = [];
+// используется при графическом задании отрезков
 const tempPointsLongLat = [];
+// используется при покоординатном задании точек
+const pointsCoordinates = [];
 
 const drawPoint = new ol.interaction.Draw({
   source: vectorSource,
@@ -19,10 +23,15 @@ drawPoint.on('drawstart', addDot);
 $("#type").change(selectAction);
 $("#clear").click(clearAll);
 $("#intersection_button").click(polygonsIntersection);
+$("#union_button").click(polygonsUnion);
+$("#a_minus_b_button").click(polygonDiffAB);
+$("#b_minus_a_button").click(polygonDiffBA);
+$("#submit_figure").click(submitFigure);
 
 document.addEventListener('keydown', handleKeys, false);
 map.addInteraction(drawPoint);
 
+addCoordinatesInputField(0);
 // ----------------------------------
 
 function initMap() {
@@ -63,11 +72,6 @@ function selectAction() {
 
 function clickInput() {
   map.addInteraction(drawPoint);
-}
-
-function coordinatesInput() {
-  map.removeInteraction(drawPoint);
-  addCoordinatesInputField();
 }
 
 function addDot(e) {
@@ -158,12 +162,9 @@ function checkAllPointsInside() {
 }
 
 function polygonsIntersection() {
-  console.log("intersection");
   if ($('#type').val() != 'Polygon') {
     return;
   }
-
-  console.log("intersection");
 
   utils.range(polygons.length).forEach((i) => {
     for (var j = i + 1; j < polygons.length; j++) {
@@ -183,9 +184,68 @@ function polygonsUnion() {
 
   utils.range(polygons.length).forEach((i) => {
     for (var j = i + 1; j < polygons.length; j++) {
-      polygons[i].union(polygons[j]);
+      polygons[i].union(polygons[j]).forEach((points) => {
+        const polygon = new Polygon(points);
+        polygon.draw(vectorSource, "green");
+      });
     }
   });
+}
+
+function polygonDiffAB() {
+  console.log("DIFF");
+  if ($('#type').val() != 'Polygon' || polygons.length != 2) {
+    return;
+  }
+
+  polygons[0].diff(polygons[1]).forEach((points) => {
+    const polygon = new Polygon(points);
+    polygon.draw(vectorSource, "yellow");
+  });
+}
+
+function polygonDiffBA() {
+  if ($('#type').val() != 'Polygon' || polygons.length != 2) {
+    return;
+  }
+
+  polygons[1].diff(polygons[0]).forEach((points) => {
+    const polygon = new Polygon(points);
+    polygon.draw(vectorSource, "yellow");
+  });
+}
+
+function addPointCoordinates(number) {
+  const long = $('#long' + number).val();
+  const lat = $('#lat' + number).val();
+  if (long.length === 0 || lat.length === 0 || isNaN(long) || isNaN(lat)) {
+    return;
+  }
+
+  pointsCoordinates.push([Number(long), Number(lat)]);
+  console.log(pointsCoordinates);
+  addCoordinatesInputField(number + 1);
+}
+
+function submitFigure() {
+  const pointsWithFeatures = pointsCoordinates.map((p) => {
+    const feature = new ol.Feature({
+      geometry: new ol.geom.Point(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'))
+    });
+    vectorSource.addFeature(feature);
+    return [p, feature];
+  });
+
+  if (pointsCoordinates.length === 1) {
+    addDotToPoints(pointsWithFeatures[0][0], pointsWithFeatures[0][1]);
+  } else if (pointsCoordinates === 2) {
+    pointsCoordinates.forEach((p) => addDotToLines(p));
+  } else {
+    pointsCoordinates.forEach((p) => addDotToPolygon(p));
+    closePolygon();
+  }
+
+  clearCoordinatesInputFields();
 }
 
 function clearAll() {
@@ -195,10 +255,28 @@ function clearAll() {
   polygons.clear();
   arcs.clear();
   points.clear();
+  pointsCoordinates.clear();
 }
 
-function addCoordinatesInputField() {
-  const div = $("div").add("input")//.add("input").add("button");
-  const elem = $("li").add(div);
-  $("#coordinates_list").append(elem);
+/**
+ * Принимает порядковый номер поля, из которого формируются id
+  * */
+function addCoordinatesInputField(number) {
+  const btn = $('<button class="add_point_button" id="add' + number + '">Add dot</button>');
+  btn.click(() => addPointCoordinates(number));
+
+  const div = $('<div></div>')
+    .append('<input id="lat' + number + '" placeholder="Latitude"/>')
+    .append('<input id="long' + number + '" placeholder="Longtitude"/>')
+    .append(btn);
+
+  const elem = $('<li class="point_coordinates"></li>').append(div);
+
+  $("#coordinates_input_list").append(elem);
+}
+
+function clearCoordinatesInputFields() {
+  pointsCoordinates.clear();
+  $(".point_coordinates").remove();
+  addCoordinatesInputField(0);
 }
