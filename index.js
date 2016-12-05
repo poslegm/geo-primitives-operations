@@ -31,6 +31,7 @@ $("#submit_figure").click(submitFigure);
 document.addEventListener('keydown', handleKeys, false);
 map.addInteraction(drawPoint);
 
+var maxCoordinatesInputFieldNumber = 0;
 addCoordinatesInputField(0);
 // ----------------------------------
 
@@ -228,13 +229,9 @@ function addPointCoordinates(number) {
 }
 
 function submitFigure() {
-  const pointsWithFeatures = pointsCoordinates.map((p) => {
-    const feature = new ol.Feature({
-      geometry: new ol.geom.Point(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'))
-    });
-    vectorSource.addFeature(feature);
-    return [p, feature];
-  });
+  addPointCoordinates(maxCoordinatesInputFieldNumber); // если пользователь ввёл координаты и не нажал Add Dot
+
+  const pointsWithFeatures = pointsCoordinates.map((p) => addPointFeature(p));
 
   if (pointsCoordinates.length === 1) {
     addDotToPoints(pointsWithFeatures[0][0], pointsWithFeatures[0][1]);
@@ -246,6 +243,16 @@ function submitFigure() {
   }
 
   clearCoordinatesInputFields();
+}
+
+function addPointFeature(point) {
+  const feature = new ol.Feature({
+    geometry: new ol.geom.Point(ol.proj.transform(point, 'EPSG:4326', 'EPSG:3857'))
+  });
+
+  vectorSource.addFeature(feature);
+
+  return [point, feature];
 }
 
 function clearAll() {
@@ -262,6 +269,8 @@ function clearAll() {
  * Принимает порядковый номер поля, из которого формируются id
   * */
 function addCoordinatesInputField(number) {
+  maxCoordinatesInputFieldNumber = number;
+
   const btn = $('<button class="add_point_button" id="add' + number + '">Add dot</button>');
   btn.click(() => addPointCoordinates(number));
 
@@ -279,4 +288,5 @@ function clearCoordinatesInputFields() {
   pointsCoordinates.clear();
   $(".point_coordinates").remove();
   addCoordinatesInputField(0);
+  maxCoordinatesInputFieldNumber = 0;
 }
