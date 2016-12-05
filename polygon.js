@@ -78,7 +78,13 @@ class Polygon {
     const bottomRay = new Arc(coords, bottomPoint);
     const intersectionsCountBottom = this._arcs.map((a) => a.findIntersection(bottomRay)).filter((x) => x != null).length;
 
-    return (intersectionsCountTop % 2 === 1) || (intersectionsCountBottom % 2 === 1);
+    const topReversePoint = [(coords[0] - 90) % 180, MaxLat - 0.1];
+    const bottomReversePoint = [(coords[0] - 90) % 180, - MaxLat + 0.1];
+    const reverseRay = new Arc(topReversePoint, bottomReversePoint);
+    const intersectionsCountReverse = this._arcs.map((a) => a.findIntersection(reverseRay)).filter((x) => x != null).length;
+
+    return ((intersectionsCountTop % 2 === 1) && (intersectionsCountBottom % 2 === 1))
+      || ((intersectionsCountReverse % 2 === 1) && (intersectionsCountBottom % 2 === 1));
   }
 
   intersection(other) {
