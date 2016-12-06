@@ -36,25 +36,16 @@ class Arc {
   }
 
   findIntersection(other) {
-    console.log("Segments coordinates: ");
-    console.log([this.a, this.b, other.a, other.b]);
-    console.log([this.cartesianA, this.cartesianB, other.cartesianA, other.cartesianB]);
-
     const n1 = vf.crossProduct(this.cartesianA, this.cartesianB);
     const n2 = vf.crossProduct(other.cartesianA, other.cartesianB);
-    console.log("Normales: ");
-    console.log([n1, n2]);
 
     const n = vf.normalizeVector(vf.crossProduct(n1, n2));
-    console.log("Normale: ");
-    console.log(n);
 
     const s1 = - Math.sign(vf.scalarProduct(vf.crossProduct(this.cartesianA, n1), n));
     const s2 = Math.sign(vf.scalarProduct(vf.crossProduct(this.cartesianB, n1), n));
     const s3 = - Math.sign(vf.scalarProduct(vf.crossProduct(other.cartesianA, n2), n));
     const s4 = Math.sign(vf.scalarProduct(vf.crossProduct(other.cartesianB, n2), n));
 
-    console.log([s1, s2, s3, s4]);
     const sign = s1 + s2 + s3 + s4;
     if (sign === 4) {
       return vf.convertCartesianToLongLat(n).map((x) => x * 180 / Math.PI);
