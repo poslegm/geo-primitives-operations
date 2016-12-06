@@ -35,6 +35,10 @@ class Polygon {
 
     this._arcs.push(new Arc(this._points.slice(-1)[0], this._points[0]));
     this._closed = true;
+
+    if (!this._isClockwise()) {
+      this._reverse()
+    }
   }
 
   isClosed() {
@@ -184,11 +188,18 @@ class Polygon {
   }
 
   /*
-   * Принимает списки точек для каждого многоугольника (с точками пересечения) в виде PointWAA и отдельный список начальных точек
+   * Принимает списки точек для каждого многоугольника (с точками пересечения) в виде PointWAA, отдельный список начальных точек
+   * и параметры обхода: начинать с точки или выхода и осуществлять обход в обратном направлении или прямом
+   *
    * Возвращает список списков координат вершин для отсечённых многоугольников
-   * !!! Работает только, если оба многоугольника заданы по часовой стрелке !!!
+   *
+   * Работает c многоугольниками, заданными по часовой стрелке
     * */
   _bypassPoints(p1, p2, startPoints, startFromEnter=true, reverseBypass=false) {
+    console.log(p1);
+    console.log(p2);
+    console.log(startPoints);
+
     const enter_point = startFromEnter ? ENTER_POINT : EXIT_POINT;
     const exit_point = startFromEnter ? EXIT_POINT : ENTER_POINT;
     const resultPolygons = [];
@@ -212,8 +223,10 @@ class Polygon {
 
         for (j = p1[i].p2index; p2[j].label != enter_point; reverseBypass ? j-- : j++) {
           clippedPolygonPoints.push(p2[j].coords);
-          if (j === p2.length - 1) {
+          if ((!reverseBypass && j === p2.length - 1)) {
             j = -1;
+          } else if ((reverseBypass && j === 0)) {
+            j = p2.length;
           }
         }
         startPoints.removeFromArray(p2[j], (x, y) => x.p2index === y.p2index);
@@ -288,6 +301,39 @@ class Polygon {
       })
     }));
   }
+
+  /**
+   * Меняет направление обхода вершин многоугольника
+    * */
+  _reverse() {
+    if (this._points.length < 3) {
+      return;
+    }
+
+    this._points = [this._points[0]].concat(this._points.slice(1).reverse());
+
+    this._arcs = [];
+    for (var i = 0; i < this._points.length; i++) {
+      if (i + 1 === this._points.length) {
+        this._arcs.push(new Arc(this._points[i], this._points[0]));
+      } else {
+        this._arcs.push(new Arc(this._points[i], this._points[i + 1]));
+      }
+    }
+    console.log("reversed");
+  }
+
+  _skewProduct(d1, d2, d3) {
+    const [x1, y1] = d1;
+    const [x2, y2] = d2;
+    const [x3, y3] = d3;
+    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+  }
+
+  _isClockwise() {
+    return this._skewProduct(this._points.slice(-1)[0], this._points[0], this._points[1]) < 0;
+  }
+
 }
 
 /*
