@@ -39,6 +39,8 @@ class Polygon {
     if (!this._isClockwise()) {
       this._reverse()
     }
+
+    this._innerPoint = this._findInnerPoint();
   }
 
   isClosed() {
@@ -88,8 +90,11 @@ class Polygon {
     const reverseRay = new Arc(topReversePoint, bottomReversePoint);
     const intersectionsCountReverse = this._arcs.map((a) => a.findIntersection(reverseRay)).filter((x) => x != null).length;
 
-    return ((intersectionsCountTop % 2 === 1) && (intersectionsCountBottom % 2 === 1))
-      || ((intersectionsCountReverse % 2 === 1) && (intersectionsCountBottom % 2 === 1));
+    if (intersectionsCountReverse % 2 === 0) {
+      return (intersectionsCountTop % 2 === 1) && (intersectionsCountBottom % 2 === 1);
+    } else {
+      return this._checkDotInsideWithInnerPoint(coords);
+    }
   }
 
   intersection(other) {
@@ -334,6 +339,59 @@ class Polygon {
     return this._skewProduct(this._points.slice(-1)[0], this._points[0], this._points[1]) < 0;
   }
 
+  _checkDotInsideWithInnerPoint(coords) {
+    const segmentChecker = new Arc(coords, this._innerPoint);
+
+    const intersectionsCount = this._arcs.map((a) => a.findIntersection(segmentChecker)).filter((x) => x != null).length;
+
+    return intersectionsCount % 2 === 0;
+  }
+
+  _findInnerPoint() {
+    if (this._points.length < 3) {
+      return;
+    }
+    //console.log(this._points);
+
+    const [pointWithMinY1, pointWithMinY2] = this._findTwoMinCoords(this._points, 1);
+    const [minY1, minY2] = [pointWithMinY1, pointWithMinY2].map((p) => p[1]);
+    const minY = (minY1 + minY2) / 2;
+    const minX = this._points.map((p) => p[0]).reduce((p, v) => p < v ? p : v);
+    const maxX = this._points.map((p) => p[0]).reduce((p, v) => p > v ? p : v);
+    const secantArc = new Arc([minX, minY], [maxX, minY]);
+    const intersections = this._arcs.map((a) => a.findIntersection(secantArc)).filter((i) => i != null);
+
+    //console.log([minX, minY], [maxX, minY]);
+    //console.log(intersections);
+    if (intersections.length === 1) {
+      intersections.push([pointWithMinY1, pointWithMinY2].filter((p) => p[0] != intersections[0][0])[0]);
+    } else if (intersections.length === 0) {
+      intersections.push(pointWithMinY1);
+      intersections.push(pointWithMinY2);
+    }
+    const [minPointLong1, minPointLong2] = this._findTwoMinCoords(intersections, 0);
+    console.log([minPointLong1, minPointLong2]);
+    const innerArc = new Arc(minPointLong1, minPointLong2);
+    const middlePoint = innerArc.getMiddlePoint();
+
+    //console.log(middlePoint);
+    return middlePoint;
+  }
+
+  _findTwoMinCoords(coords, index) {
+    var [min1, min2] = [coords[0], coords[1]];
+
+    for (var i = 0; i < coords.length; i++) {
+      if (coords[i][index] < min1[index]) {
+        min2 = min1;
+        min1 = coords[i];
+      } else if (coords[i][index] < min2[index] || coords[i][index] != min1[index]) {
+        min2 = coords[i];
+      }
+    }
+
+    return [min1, min2];
+  }
 }
 
 /*

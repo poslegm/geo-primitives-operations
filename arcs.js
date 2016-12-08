@@ -56,6 +56,16 @@ class Arc {
     }
   }
 
+  getMiddlePoint() {
+    const middlePointIndex = (this.coordinatesPart1.length + this.coordinatesPart2.length) / 2;
+
+    if (this.coordinatesPart2.length > this.coordinatesPart1.length) {
+      return ol.proj.transform(this.coordinatesPart2[middlePointIndex - this.coordinatesPart1.length], 'EPSG:3857', 'EPSG:4326');
+    } else {
+      return ol.proj.transform(this.coordinatesPart1[middlePointIndex], 'EPSG:3857', 'EPSG:4326');
+    }
+  }
+
   toString() {
     return this.a + "/" + this.b;
   }
