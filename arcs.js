@@ -57,7 +57,7 @@ class Arc {
   }
 
   getMiddlePoint() {
-    const middlePointIndex = (this.coordinatesPart1.length + this.coordinatesPart2.length) / 2;
+    const middlePointIndex = Math.floor((this.coordinatesPart1.length + this.coordinatesPart2.length) / 2);
 
     if (this.coordinatesPart2.length > this.coordinatesPart1.length) {
       return ol.proj.transform(this.coordinatesPart2[middlePointIndex - this.coordinatesPart1.length], 'EPSG:3857', 'EPSG:4326');
@@ -78,6 +78,7 @@ class Arc {
     const MaxLat = 85.05113;
 
     const circleDistance = this._computeCircleDistance(longLatA, longLatB);
+    console.log(circleDistance);
     const dotCount = 400;
     const delta = 1 / (dotCount - 1);
 

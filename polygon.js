@@ -340,6 +340,7 @@ class Polygon {
   }
 
   _checkDotInsideWithInnerPoint(coords) {
+    console.log("Dot checked with inner point");
     const segmentChecker = new Arc(coords, this._innerPoint);
 
     const intersectionsCount = this._arcs.map((a) => a.findIntersection(segmentChecker)).filter((x) => x != null).length;
