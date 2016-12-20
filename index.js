@@ -146,7 +146,12 @@ function closePolygon() {
     return;
   }
   polygons.slice(-1)[0].close();
-  polygons.slice(-1)[0].draw(vectorSource);
+  if (polygons.slice(-1)[0].checkSelfIntersections()) {
+    alert("Polygon must not have self intersections");
+    clearAll();
+  } else {
+    polygons.slice(-1)[0].draw(vectorSource);
+  }
 }
 
 function checkAllPointsInside() {

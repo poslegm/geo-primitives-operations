@@ -47,6 +47,23 @@ class Polygon {
     return this._closed;
   }
 
+  checkSelfIntersections() {
+    console.log(this._points);
+    for (var i = 0; i < this._arcs.length; i++) {
+      for (var j = i + 2; j < this._arcs.length; j++) {
+        if (i === 0 && j === this._arcs.length - 1) {
+          continue;
+        }
+        const intersection = this._arcs[j].findIntersection(this._arcs[i]);
+        console.log(intersection);
+        if (intersection != null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   draw(vectorSource, color="blue") {
     if (this._arcs.length === 0) {
       return;
