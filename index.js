@@ -224,7 +224,6 @@ function addPointCoordinates(number) {
   }
 
   pointsCoordinates.push([Number(long), Number(lat)]);
-  console.log(pointsCoordinates);
   addCoordinatesInputField(number + 1);
 }
 
@@ -235,13 +234,14 @@ function submitFigure() {
 
   if (pointsCoordinates.length === 1) {
     addDotToPoints(pointsWithFeatures[0][0], pointsWithFeatures[0][1]);
-  } else if (pointsCoordinates === 2) {
+  } else if (pointsCoordinates.length === 2) {
     pointsCoordinates.forEach((p) => addDotToLines(p));
   } else {
     pointsCoordinates.forEach((p) => addDotToPolygon(p));
     closePolygon();
   }
 
+  pointsCoordinates.clear();
   clearCoordinatesInputFields();
 }
 
