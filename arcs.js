@@ -95,11 +95,11 @@ class Arc {
 
       if (prevPoint != null && ((p[0] > MaxLong && prevPoint[0] < -MaxLong) || (p[0] < -MaxLong && prevPoint[0] > MaxLong))) {
         border = true;
-        var dfRatio = (180 - prevPoint[0]) / (p[0] - prevPoint[0]);
-        var dfY = dfRatio * p[1] + (1 - dfRatio) * prevPoint[1];
-        console.log(dfY);
-        part1.push(ol.proj.transform([prevPoint[0] > -MaxLong ? 180 : -180, dfY], 'EPSG:4326', 'EPSG:3857'));
-        part2.push(ol.proj.transform([prevPoint[0] > -MaxLong ? -180 : 180, dfY], 'EPSG:4326', 'EPSG:3857'));
+
+        const ratio = (180 - prevPoint[0]) / (p[0] - prevPoint[0]);
+        const y = ratio * p[1] + (1 - ratio) * prevPoint[1];
+        part1.push(ol.proj.transform([prevPoint[0] > -MaxLong ? 180 : -180, y], 'EPSG:4326', 'EPSG:3857'));
+        part2.push(ol.proj.transform([prevPoint[0] > -MaxLong ? -180 : 180, y], 'EPSG:4326', 'EPSG:3857'));
       }
 
       if (!border) {
@@ -110,9 +110,6 @@ class Arc {
 
       prevPoint = p;
     });
-
-    console.log(part1);
-    console.log(part2);
 
     return [part1, part2];
   }
