@@ -74,12 +74,11 @@ class Arc {
    * Возвращаемые координаты делятся на два списка, один из которых может быть пустым
     * */
   _computeCoordinates(longLatA, longLatB) {
-    const MaxLong = 178;
-    const MaxLat = 85.05113;
+    const offset = 30;
+    const MaxLong = 180 - offset;
 
     const circleDistance = this._computeCircleDistance(longLatA, longLatB);
-    console.log(circleDistance);
-    const dotCount = 400;
+    const dotCount = 500;
     const delta = 1 / (dotCount - 1);
 
     const part1 = [];
@@ -90,31 +89,30 @@ class Arc {
     utils.range(dotCount).forEach((i) => {
       const p = this._intermediatePoint(i * delta, circleDistance, longLatA, longLatB);
 
-      // граничный случай 1: линия продолжается по параллели, выходящей с одной стороны карты, и продолжающейся с другой
+      // граничный случай: линия продолжается по параллели, выходящей с одной стороны карты, и продолжающейся с другой
       // устранение горизонтальной линии, отрисовывающейся через всю карту одним вызовом LineString
       // координаты делятся на два списка, каждый из которых отрисовывается по отдельности
 
-      if (prevPoint != null &&
-          (p[0] > MaxLong || p[0] < -MaxLong) &&
-          (p[0] >= - (prevPoint[0] + 2) && p[0] <= - (prevPoint[0] - 2))
-      ) {
+      if (prevPoint != null && ((p[0] > MaxLong && prevPoint[0] < -MaxLong) || (p[0] < -MaxLong && prevPoint[0] > MaxLong))) {
         border = true;
+        var dfRatio = (180 - prevPoint[0]) / (p[0] - prevPoint[0]);
+        var dfY = dfRatio * p[1] + (1 - dfRatio) * prevPoint[1];
+        console.log(dfY);
+        part1.push(ol.proj.transform([prevPoint[0] > -MaxLong ? 180 : -180, dfY], 'EPSG:4326', 'EPSG:3857'));
+        part2.push(ol.proj.transform([prevPoint[0] > -MaxLong ? -180 : 180, dfY], 'EPSG:4326', 'EPSG:3857'));
       }
 
-      // граничный случай 2: когда геодезический отрезок проходит через полюс (полюса не отображаются на картах по стандарту EPSG:3857),
-      // по верхнему или нижнему краю карты может отрисовываться горизонтальная линия, соединяющая точки выхода за границы карты
-      // проблема решается фильтрацией точек, долгота которых лежит за пределами допустимой
-
-      if (p[1] >= -MaxLat && p[1] <= MaxLat) {
-        if (!border) {
-          part1.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
-        } else {
-          part2.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
-        }
+      if (!border) {
+        part1.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
+      } else {
+        part2.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
       }
 
       prevPoint = p;
     });
+
+    console.log(part1);
+    console.log(part2);
 
     return [part1, part2];
   }
