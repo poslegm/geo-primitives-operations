@@ -172,15 +172,17 @@ function polygonsIntersection() {
     return;
   }
 
+  const res = [];
   utils.range(polygons.length).forEach((i) => {
     for (var j = i + 1; j < polygons.length; j++) {
-      polygons[i].intersection(polygons[j]).forEach((points) => {
-        console.log(points);
-        const polygon = new Polygon(points);
-        polygon.draw(vectorSource, "red");
-      });
+      res.push(...polygons[i].intersection(polygons[j]));
     }
   });
+
+  res.forEach((polygon) => polygon.draw(vectorSource, "red"));
+
+  polygons.clear();
+  polygons.push(...res);
 }
 
 function polygonsUnion() {
@@ -188,37 +190,51 @@ function polygonsUnion() {
     return;
   }
 
+  const res = [];
   utils.range(polygons.length).forEach((i) => {
     for (var j = i + 1; j < polygons.length; j++) {
-      polygons[i].union(polygons[j]).forEach((points) => {
-        const polygon = new Polygon(points);
-        polygon.draw(vectorSource, "green");
-      });
+      res.push(...polygons[i].union(polygons[j]));
     }
   });
+
+  res.forEach((polygon) => polygon.draw(vectorSource, "green"));
+
+  polygons.clear();
+  polygons.push(...res);
 }
 
 function polygonDiffAB() {
+  polygonDiff(0, 1);
+}
+
+function polygonDiffBA() {
+  polygonDiff(1, 0);
+}
+
+function polygonDiff(i1, i2) {
   console.log("DIFF");
   if ($('#type').val() != 'Polygon' || polygons.length != 2) {
     return;
   }
 
-  polygons[0].diff(polygons[1]).forEach((points) => {
-    const polygon = new Polygon(points);
-    polygon.draw(vectorSource, "yellow");
-  });
-}
 
-function polygonDiffBA() {
-  if ($('#type').val() != 'Polygon' || polygons.length != 2) {
-    return;
+  const res = polygons[i1].diff(polygons[i2]);
+
+  for (var i = 0; i < res.length; i++) {
+    for (var j = 0; j < res.length; j++) {
+      if (res[i].checkDotInside(res[j]._points[0])) {
+        res[i].addHole(res[j]);
+        res[j].isHole = true;
+      }
+    }
   }
 
-  polygons[1].diff(polygons[0]).forEach((points) => {
-    const polygon = new Polygon(points);
-    polygon.draw(vectorSource, "yellow");
-  });
+  polys = res.filter((p) => !p.isHole);
+
+  polys.forEach((polygon) => polygon.draw(vectorSource, "yellow"));
+
+  polygons.clear();
+  polygons.push(...polys);
 }
 
 function addPointCoordinates(number) {

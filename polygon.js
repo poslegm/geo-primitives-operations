@@ -8,6 +8,8 @@ class Polygon {
     this._points = [];
     this._arcs = [];
     this._closed = false;
+    this._holes = [];
+    this.isHole = false;
 
     points.forEach((p) => this.addPoint(p));
     if (points.length > 0) {
@@ -37,7 +39,7 @@ class Polygon {
     this._closed = true;
 
     if (!this._isClockwise()) {
-      this._reverse()
+      this._reverse();
     }
 
     this._innerPoint = this._findInnerPoint();
@@ -47,15 +49,22 @@ class Polygon {
     return this._closed;
   }
 
+  addHole(hole) {
+    if (hole._isClockwise()) {
+      hole._reverse();
+    }
+
+    this._holes.push(hole);
+    this._arcs.push(...hole._arcs);
+  }
+
   checkSelfIntersections() {
-    console.log(this._points);
     for (var i = 0; i < this._arcs.length; i++) {
       for (var j = i + 2; j < this._arcs.length; j++) {
         if (i === 0 && j === this._arcs.length - 1) {
           continue;
         }
         const intersection = this._arcs[j].findIntersection(this._arcs[i]);
-        console.log(intersection);
         if (intersection != null) {
           return true;
         }
@@ -116,7 +125,7 @@ class Polygon {
 
   intersection(other) {
     if (!this._closed || !other._closed) {
-      return [];
+      return [].map((points) => new Polygon(points));
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
@@ -124,20 +133,20 @@ class Polygon {
 
     if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
       if (other.checkDotInside(thisDots[0][0])) {
-        return [thisDots.map((p) => p[0])];
+        return [thisDots.map((p) => p[0])].map((points) => new Polygon(points));
       } else if (this.checkDotInside(otherDots[0][0])) {
-        return [otherDots.map((p) => p[0])];
+        return [otherDots.map((p) => p[0])].map((points) => new Polygon(points));
       } else {
-        return [];
+        return [].map((points) => new Polygon(points));
       }
     }
 
-    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots).map((points) => new Polygon(points));
   }
 
   union(other) {
     if (!this._closed || !other._closed) {
-      return [];
+      return [].map((points) => new Polygon(points));
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
@@ -147,20 +156,29 @@ class Polygon {
       return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])];
     }
 
-    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false);
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false).map((points) => new Polygon(points));
   }
 
   diff(other) {
     if (!this._closed || !other._closed) {
-      return [];
+      return [].map((points) => new Polygon(points));
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
     const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
 
-    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false, true);
-  }
+    if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
+      if (other.checkDotInside(thisDots[0][0])) {
+        return [].map((points) => new Polygon(points));
+      } else if (this.checkDotInside(otherDots[0][0])) {
+        return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])].map((points) => new Polygon(points));
+      } else {
+        return [thisDots.map((p) => p[0])].map((points) => new Polygon(points));
+      }
+    }
 
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false, true).map((points) => new Polygon(points));
+  }
 
   _markPoints(thisDots, otherDots, other, startFromEnter=true) {
     var firstPointChecked = false;
@@ -218,10 +236,6 @@ class Polygon {
    * Работает c многоугольниками, заданными по часовой стрелке
     * */
   _bypassPoints(p1, p2, startPoints, startFromEnter=true, reverseBypass=false) {
-    console.log(p1);
-    console.log(p2);
-    console.log(startPoints);
-
     const enter_point = startFromEnter ? ENTER_POINT : EXIT_POINT;
     const exit_point = startFromEnter ? EXIT_POINT : ENTER_POINT;
     const resultPolygons = [];
@@ -388,7 +402,6 @@ class Polygon {
       intersections.push(pointWithMinY2);
     }
     const [minPointLong1, minPointLong2] = this._findTwoMinCoords(intersections, 0);
-    console.log([minPointLong1, minPointLong2]);
     const innerArc = new Arc(minPointLong1, minPointLong2);
     const middlePoint = innerArc.getMiddlePoint();
 
@@ -411,6 +424,7 @@ class Polygon {
     return [min1, min2];
   }
 }
+
 
 /*
  * Класс точек, рассматриваемых при обходе многоугольников по алгоритму Вейлера-Азертона
