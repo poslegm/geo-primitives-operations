@@ -173,11 +173,9 @@ function polygonsIntersection() {
   }
 
   const res = [];
-  utils.range(polygons.length).forEach((i) => {
-    for (var j = i + 1; j < polygons.length; j++) {
-      res.push(...polygons[i].intersection(polygons[j]));
-    }
-  });
+  for (var i = 0; i < polygons.length - 1; i++) {
+    res.push(...polygons[i].intersection(polygons[polygons.length - 1]));
+  }
 
   res.forEach((polygon) => polygon.draw(vectorSource, "red"));
 
@@ -199,6 +197,7 @@ function polygonsUnion() {
 
   res.forEach((polygon) => polygon.draw(vectorSource, "green"));
 
+  console.log(res);
   polygons.clear();
   polygons.push(...res);
 }

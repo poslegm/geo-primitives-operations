@@ -153,7 +153,7 @@ class Polygon {
     const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
 
     if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
-      return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])];
+      return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])].map((points) => new Polygon(points));
     }
 
     return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false).map((points) => new Polygon(points));
@@ -271,6 +271,7 @@ class Polygon {
       resultPolygons.push(clippedPolygonPoints);
     }
 
+    console.log(resultPolygons);
     return resultPolygons;
   }
 
@@ -359,15 +360,14 @@ class Polygon {
     console.log("reversed");
   }
 
-  _skewProduct(d1, d2, d3) {
-    const [x1, y1] = d1;
-    const [x2, y2] = d2;
-    const [x3, y3] = d3;
-    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
-  }
-
   _isClockwise() {
-    return this._skewProduct(this._points.slice(-1)[0], this._points[0], this._points[1]) < 0;
+    var sum = 0;
+    for (var i = 0; i < this._points.length; i++) {
+      const v1 = this._points[i];
+      const v2 = this._points[(i + 1) % this._points.length];
+      sum += (v2[0] - v1[0]) * (v2[1] + v1[1]);
+    }
+    return sum > 0.0;
   }
 
   _checkDotInsideWithInnerPoint(coords) {
