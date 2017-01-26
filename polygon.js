@@ -8,6 +8,8 @@ class Polygon {
     this._points = [];
     this._arcs = [];
     this._closed = false;
+    this._holes = [];
+    this.isHole = false;
 
     points.forEach((p) => this.addPoint(p));
     if (points.length > 0) {
@@ -35,17 +37,47 @@ class Polygon {
 
     this._arcs.push(new Arc(this._points.slice(-1)[0], this._points[0]));
     this._closed = true;
+
+    if (!this._isClockwise()) {
+      this._reverse();
+    }
+
+    this._innerPoint = this._findInnerPoint();
   }
 
   isClosed() {
     return this._closed;
   }
 
+  addHole(hole) {
+    if (hole._isClockwise()) {
+      hole._reverse();
+    }
+
+    this._holes.push(hole);
+    this._arcs.push(...hole._arcs);
+  }
+
+  checkSelfIntersections() {
+    for (var i = 0; i < this._arcs.length; i++) {
+      for (var j = i + 2; j < this._arcs.length; j++) {
+        if (i === 0 && j === this._arcs.length - 1) {
+          continue;
+        }
+        const intersection = this._arcs[j].findIntersection(this._arcs[i]);
+        if (intersection != null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   draw(vectorSource, color="blue") {
     if (this._arcs.length === 0) {
       return;
     }
-    console.log('draw');
+
     this._arcs.forEach((a) => a.draw(vectorSource, color));
 
     if (!this._tempLineAdded) {
@@ -64,8 +96,9 @@ class Polygon {
   }
   /*
    * Принимает долготу и широту точки, проверяет её принадлежность фигуре методом трассировки луча
-   * Луч идёт от точки по меридиану до верхней границы карты
-   * !!! может не работать с фигурами, выходящими за верхнюю границу !!!
+   * Один отрезок идёт от точки по меридиану до верхней границы карты
+   * Второй отрезок идёт от точки по меридиану до нижней границы карты
+   * Третий отрезок идёт по продолжению дуги первых двух отрезков
     * */
   checkDotInside(coords) {
     const MaxLat = 90;
@@ -78,13 +111,21 @@ class Polygon {
     const bottomRay = new Arc(coords, bottomPoint);
     const intersectionsCountBottom = this._arcs.map((a) => a.findIntersection(bottomRay)).filter((x) => x != null).length;
 
-    return (intersectionsCountTop % 2 === 1) || (intersectionsCountBottom % 2 === 1);
+    const topReversePoint = [(coords[0] - 90) % 180, MaxLat - 0.1];
+    const bottomReversePoint = [(coords[0] - 90) % 180, - MaxLat + 0.1];
+    const reverseRay = new Arc(topReversePoint, bottomReversePoint);
+    const intersectionsCountReverse = this._arcs.map((a) => a.findIntersection(reverseRay)).filter((x) => x != null).length;
+
+    if (intersectionsCountReverse % 2 === 0) {
+      return (intersectionsCountTop % 2 === 1) && (intersectionsCountBottom % 2 === 1);
+    } else {
+      return this._checkDotInsideWithInnerPoint(coords);
+    }
   }
 
-  // TODO проверять частный случай, когда пересечений нет
   intersection(other) {
     if (!this._closed || !other._closed) {
-      return null;
+      return [].map((points) => new Polygon(points));
     }
 
     const [thisDots, otherDots] = this._createPointsLists(other);
@@ -92,15 +133,51 @@ class Polygon {
 
     if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
       if (other.checkDotInside(thisDots[0][0])) {
-        return [thisDots.map((p) => p[0])];
+        return [thisDots.map((p) => p[0])].map((points) => new Polygon(points));
       } else if (this.checkDotInside(otherDots[0][0])) {
-        return [otherDots.map((p) => p[0])];
+        return [otherDots.map((p) => p[0])].map((points) => new Polygon(points));
       } else {
-        return [];
+        return [].map((points) => new Polygon(points));
       }
     }
 
-    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots);
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots).map((points) => new Polygon(points));
+  }
+
+  union(other) {
+    if (!this._closed || !other._closed) {
+      return [].map((points) => new Polygon(points));
+    }
+
+    const [thisDots, otherDots] = this._createPointsLists(other);
+    const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
+
+    if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
+      return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])].map((points) => new Polygon(points));
+    }
+
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false).map((points) => new Polygon(points));
+  }
+
+  diff(other) {
+    if (!this._closed || !other._closed) {
+      return [].map((points) => new Polygon(points));
+    }
+
+    const [thisDots, otherDots] = this._createPointsLists(other);
+    const [thisLabeledDots, otherLabeledDots, startDots] = this._markPoints(thisDots, otherDots, other, false);
+
+    if (startDots.length === 0 && thisDots.length > 0 && otherDots.length > 0) {
+      if (other.checkDotInside(thisDots[0][0])) {
+        return [].map((points) => new Polygon(points));
+      } else if (this.checkDotInside(otherDots[0][0])) {
+        return [thisDots.map((p) => p[0]), otherDots.map((p) => p[0])].map((points) => new Polygon(points));
+      } else {
+        return [thisDots.map((p) => p[0])].map((points) => new Polygon(points));
+      }
+    }
+
+    return this._bypassPoints(thisLabeledDots, otherLabeledDots, startDots, false, true).map((points) => new Polygon(points));
   }
 
   _markPoints(thisDots, otherDots, other, startFromEnter=true) {
@@ -151,11 +228,16 @@ class Polygon {
   }
 
   /*
-   * Принимает списки точек для каждого многоугольника (с точками пересечения) в виде PointWAA и отдельный список начальных точек
+   * Принимает списки точек для каждого многоугольника (с точками пересечения) в виде PointWAA, отдельный список начальных точек
+   * и параметры обхода: начинать с точки или выхода и осуществлять обход в обратном направлении или прямом
+   *
    * Возвращает список списков координат вершин для отсечённых многоугольников
-   * !!! Работает только, если оба многоугольника заданы по часовой стрелке !!!
+   *
+   * Работает c многоугольниками, заданными по часовой стрелке
     * */
-  _bypassPoints(p1, p2, startPoints, reverseBypass=false) {
+  _bypassPoints(p1, p2, startPoints, startFromEnter=true, reverseBypass=false) {
+    const enter_point = startFromEnter ? ENTER_POINT : EXIT_POINT;
+    const exit_point = startFromEnter ? EXIT_POINT : ENTER_POINT;
     const resultPolygons = [];
 
     while (startPoints.length != 0) {
@@ -168,15 +250,20 @@ class Polygon {
 
       while (j != firstPointP2Index) {
         if (j === -1) { j = firstPointP2Index; }
-        for (i = p2[j].p1index; p1[i].label != EXIT_POINT; i++) {
+        for (i = p2[j].p1index; p1[i].label != exit_point; i++) {
           clippedPolygonPoints.push(p1[i].coords);
+          if (i === p1.length - 1) {
+            i = -1;
+          }
         }
-        console.log(clippedPolygonPoints);
-        console.log(p1[i].p2index);
 
-        for (j = p1[i].p2index; p2[j].label != ENTER_POINT; reverseBypass ? j-- : j++) {
+        for (j = p1[i].p2index; p2[j].label != enter_point; reverseBypass ? j-- : j++) {
           clippedPolygonPoints.push(p2[j].coords);
-          console.log(p2[j].label);
+          if ((!reverseBypass && j === p2.length - 1)) {
+            j = -1;
+          } else if ((reverseBypass && j === 0)) {
+            j = p2.length;
+          }
         }
         startPoints.removeFromArray(p2[j], (x, y) => x.p2index === y.p2index);
       }
@@ -184,6 +271,7 @@ class Polygon {
       resultPolygons.push(clippedPolygonPoints);
     }
 
+    console.log(resultPolygons);
     return resultPolygons;
   }
 
@@ -250,7 +338,93 @@ class Polygon {
       })
     }));
   }
+
+  /**
+   * Меняет направление обхода вершин многоугольника
+    * */
+  _reverse() {
+    if (this._points.length < 3) {
+      return;
+    }
+
+    this._points = [this._points[0]].concat(this._points.slice(1).reverse());
+
+    this._arcs = [];
+    for (var i = 0; i < this._points.length; i++) {
+      if (i + 1 === this._points.length) {
+        this._arcs.push(new Arc(this._points[i], this._points[0]));
+      } else {
+        this._arcs.push(new Arc(this._points[i], this._points[i + 1]));
+      }
+    }
+    console.log("reversed");
+  }
+
+  _isClockwise() {
+    var sum = 0;
+    for (var i = 0; i < this._points.length; i++) {
+      const v1 = this._points[i];
+      const v2 = this._points[(i + 1) % this._points.length];
+      sum += (v2[0] - v1[0]) * (v2[1] + v1[1]);
+    }
+    return sum > 0.0;
+  }
+
+  _checkDotInsideWithInnerPoint(coords) {
+    console.log("Dot checked with inner point");
+    const segmentChecker = new Arc(coords, this._innerPoint);
+
+    const intersectionsCount = this._arcs.map((a) => a.findIntersection(segmentChecker)).filter((x) => x != null).length;
+
+    return intersectionsCount % 2 === 0;
+  }
+
+  _findInnerPoint() {
+    if (this._points.length < 3) {
+      return;
+    }
+    //console.log(this._points);
+
+    const [pointWithMinY1, pointWithMinY2] = this._findTwoMinCoords(this._points, 1);
+    const [minY1, minY2] = [pointWithMinY1, pointWithMinY2].map((p) => p[1]);
+    const minY = (minY1 + minY2) / 2;
+    const minX = this._points.map((p) => p[0]).reduce((p, v) => p < v ? p : v);
+    const maxX = this._points.map((p) => p[0]).reduce((p, v) => p > v ? p : v);
+    const secantArc = new Arc([minX, minY], [maxX, minY]);
+    const intersections = this._arcs.map((a) => a.findIntersection(secantArc)).filter((i) => i != null);
+
+    //console.log([minX, minY], [maxX, minY]);
+    //console.log(intersections);
+    if (intersections.length === 1) {
+      intersections.push([pointWithMinY1, pointWithMinY2].filter((p) => p[0] != intersections[0][0])[0]);
+    } else if (intersections.length === 0) {
+      intersections.push(pointWithMinY1);
+      intersections.push(pointWithMinY2);
+    }
+    const [minPointLong1, minPointLong2] = this._findTwoMinCoords(intersections, 0);
+    const innerArc = new Arc(minPointLong1, minPointLong2);
+    const middlePoint = innerArc.getMiddlePoint();
+
+    //console.log(middlePoint);
+    return middlePoint;
+  }
+
+  _findTwoMinCoords(coords, index) {
+    var [min1, min2] = [coords[0], coords[1]];
+
+    for (var i = 0; i < coords.length; i++) {
+      if (coords[i][index] < min1[index]) {
+        min2 = min1;
+        min1 = coords[i];
+      } else if (coords[i][index] < min2[index] || coords[i][index] != min1[index]) {
+        min2 = coords[i];
+      }
+    }
+
+    return [min1, min2];
+  }
 }
+
 
 /*
  * Класс точек, рассматриваемых при обходе многоугольников по алгоритму Вейлера-Азертона
