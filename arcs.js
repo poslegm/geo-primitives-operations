@@ -36,25 +36,16 @@ class Arc {
   }
 
   findIntersection(other) {
-    console.log("Segments coordinates: ");
-    console.log([this.a, this.b, other.a, other.b]);
-    console.log([this.cartesianA, this.cartesianB, other.cartesianA, other.cartesianB]);
-
     const n1 = vf.crossProduct(this.cartesianA, this.cartesianB);
     const n2 = vf.crossProduct(other.cartesianA, other.cartesianB);
-    console.log("Normales: ");
-    console.log([n1, n2]);
 
     const n = vf.normalizeVector(vf.crossProduct(n1, n2));
-    console.log("Normale: ");
-    console.log(n);
 
     const s1 = - Math.sign(vf.scalarProduct(vf.crossProduct(this.cartesianA, n1), n));
     const s2 = Math.sign(vf.scalarProduct(vf.crossProduct(this.cartesianB, n1), n));
     const s3 = - Math.sign(vf.scalarProduct(vf.crossProduct(other.cartesianA, n2), n));
     const s4 = Math.sign(vf.scalarProduct(vf.crossProduct(other.cartesianB, n2), n));
 
-    console.log([s1, s2, s3, s4]);
     const sign = s1 + s2 + s3 + s4;
     if (sign === 4) {
       return vf.convertCartesianToLongLat(n).map((x) => x * 180 / Math.PI);
@@ -62,6 +53,16 @@ class Arc {
       return vf.convertCartesianToLongLat(vf.reverseVector(n)).map((x) => x * 180 / Math.PI);
     } else {
       return null;
+    }
+  }
+
+  getMiddlePoint() {
+    const middlePointIndex = Math.floor((this.coordinatesPart1.length + this.coordinatesPart2.length) / 2);
+
+    if (this.coordinatesPart2.length > this.coordinatesPart1.length) {
+      return ol.proj.transform(this.coordinatesPart2[middlePointIndex - this.coordinatesPart1.length], 'EPSG:3857', 'EPSG:4326');
+    } else {
+      return ol.proj.transform(this.coordinatesPart1[middlePointIndex], 'EPSG:3857', 'EPSG:4326');
     }
   }
 
@@ -73,11 +74,11 @@ class Arc {
    * Возвращаемые координаты делятся на два списка, один из которых может быть пустым
     * */
   _computeCoordinates(longLatA, longLatB) {
-    const MaxLong = 178;
-    const MaxLat = 85.05113;
+    const offset = 30;
+    const MaxLong = 180 - offset;
 
     const circleDistance = this._computeCircleDistance(longLatA, longLatB);
-    const dotCount = 400;
+    const dotCount = 500;
     const delta = 1 / (dotCount - 1);
 
     const part1 = [];
@@ -88,27 +89,23 @@ class Arc {
     utils.range(dotCount).forEach((i) => {
       const p = this._intermediatePoint(i * delta, circleDistance, longLatA, longLatB);
 
-      // граничный случай 1: линия продолжается по параллели, выходящей с одной стороны карты, и продолжающейся с другой
+      // граничный случай: линия продолжается по параллели, выходящей с одной стороны карты, и продолжающейся с другой
       // устранение горизонтальной линии, отрисовывающейся через всю карту одним вызовом LineString
       // координаты делятся на два списка, каждый из которых отрисовывается по отдельности
 
-      if (prevPoint != null &&
-          (p[0] > MaxLong || p[0] < -MaxLong) &&
-          (p[0] >= - (prevPoint[0] + 2) && p[0] <= - (prevPoint[0] - 2))
-      ) {
+      if (prevPoint != null && ((p[0] > MaxLong && prevPoint[0] < -MaxLong) || (p[0] < -MaxLong && prevPoint[0] > MaxLong))) {
         border = true;
+
+        const ratio = (180 - prevPoint[0]) / (p[0] - prevPoint[0]);
+        const y = ratio * p[1] + (1 - ratio) * prevPoint[1];
+        part1.push(ol.proj.transform([prevPoint[0] > -MaxLong ? 180 : -180, y], 'EPSG:4326', 'EPSG:3857'));
+        part2.push(ol.proj.transform([prevPoint[0] > -MaxLong ? -180 : 180, y], 'EPSG:4326', 'EPSG:3857'));
       }
 
-      // граничный случай 2: когда геодезический отрезок проходит через полюс (полюса не отображаются на картах по стандарту EPSG:3857),
-      // по верхнему или нижнему краю карты может отрисовываться горизонтальная линия, соединяющая точки выхода за границы карты
-      // проблема решается фильтрацией точек, долгота которых лежит за пределами допустимой
-
-      if (p[1] >= -MaxLat && p[1] <= MaxLat) {
-        if (!border) {
-          part1.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
-        } else {
-          part2.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
-        }
+      if (!border) {
+        part1.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
+      } else {
+        part2.push(ol.proj.transform(p, 'EPSG:4326', 'EPSG:3857'));
       }
 
       prevPoint = p;
