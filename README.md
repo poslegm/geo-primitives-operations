@@ -8,12 +8,14 @@ Drawing and boolean operations with polygons on sphere
 3. Open index.html in browser
 
 User can draw polygon on map using cursor or input accurate points coordinates in right menu.  
-<img src="screenshots/s1.png" width="400"/>
-User can draw lines on sphere, press ENTER key and see intersection points.
-<img src="screenshots/s2.png" width="400"/>  
-User can draw points, press ENTER and see, what points are within polygons. Warning! May not work correctly for polygons lying at the poles, because my algorithm is not perfect.
-<img src="screenshots/s3.png" width="400"/>  
-User can provide boolean operations with two polygons.
-<img src="screenshots/s4.png" width="400"/>  
-<img src="screenshots/s5.png" width="400"/>  
-<img src="screenshots/s6.png" width="400"/>
+<img src="screenshots/s1.png" width="300"/>  
+User can draw lines on sphere, press ENTER key and see intersection points.  
+<img src="screenshots/s2.png" width="300"/>   
+User can draw points, press ENTER and see, what points are within polygons. Warning! May not work correctly for polygons lying at the poles, because my algorithm is not perfect.  
+<img src="screenshots/s3.png" width="300"/>    
+User can provide boolean operations with two polygons.  
+<img src="screenshots/s4.png" width="300"/>   
+  
+<img src="screenshots/s5.png" width="300"/>   
+  
+<img src="screenshots/s6.png" width="300"/>  
