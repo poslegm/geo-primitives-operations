@@ -200,6 +200,7 @@ function polygonsUnion() {
 
   res.forEach((polygon) => polygon.draw(vectorSource, "green"));
 
+  console.log(res);
   polygons.clear();
   polygons.push(...res);
 }
@@ -213,6 +214,7 @@ function polygonDiffBA() {
 }
 
 function polygonDiff(i1, i2) {
+  console.log("DIFF");
   if ($('#type').val() != 'Polygon' || polygons.length != 2) {
     return;
   }
