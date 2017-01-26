@@ -155,7 +155,7 @@ function closePolygon() {
 }
 
 function checkAllPointsInside() {
-  polygons.filter((p) => p.isClosed()).forEach((polygon) => points.forEach((point) => checkPointInside(point)));
+  polygons.filter((p) => p.isClosed()).forEach((polygon) => points.forEach((point) => checkPointInside(polygon, point)));
 }
 
 const coloredPoint = new ol.style.Circle({
@@ -163,7 +163,7 @@ const coloredPoint = new ol.style.Circle({
   stroke: new ol.style.Stroke({color: 'red', width: 2})
 });
 
-function checkPointInside(point) {
+function checkPointInside(polygon, point) {
   const [coords, feature] = point;
   if (polygon.checkDotInside(coords)) {
     feature.setStyle(new ol.style.Style({image: coloredPoint}));
