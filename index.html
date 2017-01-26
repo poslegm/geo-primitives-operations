@@ -19,8 +19,12 @@
         display: inline;
       }
 
-      #coordinates_list {
+      #coordinates_input_list {
         list-style-type: none;
+      }
+
+      .point_coordinates {
+        margin-bottom: 6px;
       }
     </style>
   </head>
@@ -34,7 +38,6 @@
         <option value="Polygon">Polygon</option>
         <option value="Point">Point</option>
         <option value="Line">Line</option>
-        <option value="Coordinates">Coordinates</option>
       </select>
       <div>
         <button id="intersection_button">Intersection</button>
@@ -43,7 +46,8 @@
         <button id="b_minus_a_button">B - A</button>
       </div>
 
-      <ul id="coordinates_list"></ul>
+      <ul id="coordinates_input_list"></ul>
+      <button id="submit_figure">Submit</button>
     </div>
 
     <script src="bundle.js"></script>
